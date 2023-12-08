@@ -1,0 +1,159 @@
+FROM mingw64-w64:latest
+
+RUN mkdir -p /sources/tarballs /opt/deps /opt/gpg
+ENV DEP_PREFIX=/opt/deps
+WORKDIR /sources/tarballs
+# Fetch sources
+RUN curl -L --remote-name-all\
+    https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.3.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.47.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.10.2.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/libksba/libksba-1.6.3.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.5.tar.bz2 \
+    https://gnupg.org/ftp/gcrypt/pinentry/pinentry-1.2.1.tar.bz2 \
+    https://ftp.gnu.org/gnu/libiconv/pinentry-1.2.1.tar.bz2
+
+WORKDIR /sources/source
+# Extract sources
+RUN tar -oxf /sources/tarballs/gnupg-2.4.3.tar.bz2
+RUN tar -oxf /sources/tarballs/npth-1.6.tar.bz2
+RUN tar -oxf /sources/tarballs/libgcrypt-1.10.2.tar.bz2
+RUN tar -oxf /sources/tarballs/libksba-1.6.3.tar.bz2
+RUN tar -oxf /sources/tarballs/libassuan-2.5.5.tar.bz2
+RUN tar -oxf /sources/tarballs/pinentry-1.2.1.tar.bz2
+RUN tar -oxf /sources/tarballs/pinentry-1.2.1.tar.bz2
+
+WORKDIR /sources/source
+
+# install npth
+RUN cd npth && \
+    /npth-1.6/configure && \
+        --host=x86_64-w64-mingw32 \
+        --prefix="${DEP_PREFIX}" \
+        --enable-shared=no \
+        --enable-static=yes \
+        CFLAGS="-Os" && \
+    make -j$(nproc) && \
+    make install
+
+# install libgpg-error
+RUN cd libgpg-erro && \
+    libgpg-error/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="/deps" \
+        --enable-shared=no \
+        --enable-static=yes \
+        --disable-nls \
+        --disable-doc \
+        --disable-languages \
+        CFLAGS="-Os" \
+ && make -j$(nproc) \
+ && make install \
+ && cp src/gpg-error-config /deps/bin/
+
+# install libassuan
+RUN cd libassuan && \
+    libassuan-2.5.5/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="/deps" \
+        --enable-shared=no \
+        --enable-static=yes \
+        --with-libgpg-error-prefix="/deps" \
+        CFLAGS="-Os" \
+ && make -j$(nproc) \
+ && make install
+
+WORKDIR /libgcrypt
+RUN /libgcrypt-$LIBGCRYPT_VERSION/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="/deps" \
+        --enable-shared=no \
+        --enable-static=yes \
+        --disable-doc \
+        --with-libgpg-error-prefix="/deps" \
+        CFLAGS="-Os" \
+ && make -j$(nproc) \
+ && make install
+
+WORKDIR /libksba
+RUN /libksba-$LIBKSBA_VERSION/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="/deps" \
+        --enable-shared=no \
+        --enable-static=yes \
+        --with-libgpg-error-prefix="/deps" \
+ && make -j$(nproc) \
+ && make install
+
+WORKDIR /gnupg
+RUN /gnupg-$GNUPG_VERSION/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="$PREFIX" \
+        --with-npth-prefix="/deps" \
+        --with-libgpg-error-prefix="/deps" \
+        --with-libgcrypt-prefix="/deps" \
+        --with-libassuan-prefix="/deps" \
+        --with-ksba-prefix="/deps" \
+        --disable-bzip2 \
+        --disable-card-support \
+        --disable-ccid-driver \
+        --disable-dirmngr \
+        --disable-doc \
+        --disable-gnutls \
+        --disable-gpg-blowfish \
+        --disable-gpg-cast5 \
+        --disable-gpg-idea \
+        --disable-gpg-md5 \
+        --disable-gpg-rmd160 \
+        --disable-gpgtar \
+        --disable-ldap \
+        --disable-libdns \
+        --disable-nls \
+        --disable-ntbtls \
+        --disable-photo-viewers \
+        --disable-regex \
+        --disable-scdaemon \
+        --disable-sqlite \
+        --disable-wks-tools \
+        --disable-zip \
+        CFLAGS="-Os -fcommon" \
+        LDFLAGS="-static -s" \
+        LIBS="-lws2_32" \
+ && make -j$(nproc) \
+ && make install
+
+WORKDIR /iconv
+RUN /libiconv-$ICONV_VERSION/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="/deps" \
+        --enable-shared=no \
+        --enable-static=yes \
+        --disable-nls \
+        --disable-dependency-tracking \
+        CFLAGS="-Os" \
+ && make -j$(nproc) \
+ && make install
+
+WORKDIR /pinentry
+RUN /pinentry-$PINENTRY_VERSION/configure \
+        --host=x86_64-w64-mingw32 \
+        --prefix="$PREFIX" \
+        --with-libgpg-error-prefix="/deps" \
+        --with-libassuan-prefix="/deps" \
+        --with-libiconv-prefix="/deps" \
+        --disable-ncurses \
+        --disable-libsecret \
+        --disable-pinentry-tty \
+        --disable-pinentry-curses \
+        --disable-pinentry-emacs \
+        --disable-inside-emacs \
+        --disable-pinentry-gtk2 \
+        --disable-pinentry-gnome3 \
+        --disable-pinentry-qt \
+        --disable-pinentry-tqt \
+        --disable-pinentry-fltk \
+        LDFLAGS="-static -s" \
+        LIBS="-lws2_32" \
+ && make -j$(nproc) \
+ && cp w32/pinentry-w32.exe $PREFIX/bin/pinentry.exe
