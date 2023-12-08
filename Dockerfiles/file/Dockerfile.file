@@ -1,0 +1,19 @@
+FROM mingw-w64
+
+RUN mkdir -p /opt/file/src /opt/file/bin
+WORKDIR /opt/file/src
+
+RUN curl -o file.tar.gz https://github.com/file/file/archive/refs/tags/FILE5_45.tar.gz &&\
+  tar -oxf file.tar.gz
+
+WORKDIR /opt/file/src/file
+
+# Build file
+RUN $BUILD_ROOT/src/mingw-w64/mingw-w64-headers/configure \\
+      --prefix=/opt/file \\
+      --host=x86_64-w64-mingw32 \\
+      --target=x86_64-w64-mingw32 \\
+      --disable-multilib \\
+      --enable-languages=c,c++ &&\
+    make -j4 &&\
+    make install
