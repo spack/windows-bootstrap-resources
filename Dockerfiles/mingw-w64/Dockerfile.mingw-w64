@@ -1,0 +1,88 @@
+FROM centos:7
+
+# install requirements for building on Windows
+RUN yum update -y
+RUN yum install -y bison flex texinfo make
+# install modern gcc toolchain
+RUN yum groupinstall "Development Tools" -y
+RUN yum install -y centos-release-scl-rh
+RUN INSTALL_PKGS="devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran devtoolset-7-gdb make" && \
+     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
+     rpm -V $INSTALL_PKGS && \
+     yum -y clean all --enablerepo='*'
+
+# setup build
+RUN mkdir -p /opt/scripts /opt/mingw64-w64
+# COPY ./scripts /opt/scripts
+ENV PATH=/opt/mingw64-w64:/opt/mingw64-w64/bin:$PATH
+# RUN /opt/scripts/setup-build-dir-structure.sh
+
+
+# setup-build-dirs
+RUN mkdir -p /opt/mingw-builds && \
+    cd /opt/mingw-builds || exit && \
+    # Create source residence directories
+    mkdir -p src/binutils src/mingw-w64 src/gcc && \
+    # Create build directories
+    mkdir -p build/cross/binutils build/cross/gcc build/cross/mingw-w64-headers build/cross/mingw-w64
+
+# fetch sources
+RUN echo -e """#!/bin/bash\n \
+cd /opt/mingw-builds || exit\n \
+fetch_extract_sources()\n\
+{\n\
+    if [ -n \"\$2\" ]\n\
+    then\n\
+        name=\$2\n\
+    else\n\
+        name=1\n\
+    fi\n\
+    file_type=\$(echo \"\$1\" | awk -F \"/\" '{print \$(NF-'\"\$name\"')}')\n\
+    file_name=\$(echo \"\$1\" | awk -F \"/\" '{print \$NF}')\n\
+    curl -L -o src/\"\$file_type\"/\"\$file_name\" \"\$1\"\n\
+    cd src/\"\$file_type\" || exit\n\
+    tar -C . --strip-components=1 -oxf \"\$file_name\"\n\
+    cd ../..\n\
+}\n\
+# acquire binutils\n\
+fetch_extract_sources https://ftp.gnu.org/gnu/binutils/binutils-2.41.tar.xz\n\
+# acquire gcc\n\
+fetch_extract_sources https://ftp.gnu.org/gnu/gcc/gcc-11.4.0/gcc-11.4.0.tar.gz 2\n\
+# acquire mingw-w64\n\
+fetch_extract_sources https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v11.0.1.tar.bz2 3\n\
+""" > /opt/scripts/acquire-sources.sh && chmod +x /opt/scripts/acquire-sources.sh
+
+RUN /opt/scripts/acquire-sources.sh
+
+ENV BUILD_ROOT=/opt/mingw-builds
+ENV INSTALL_DIR=/opt/mingw64-w64
+ENV SCRIPT_DIR=/opt/scripts
+
+RUN cd $BUILD_ROOT/build/cross/binutils || exit && \
+    ../../../src/binutils/configure --prefix="$INSTALL_DIR" --target=x86_64-w64-mingw32 --disable-multilib && \
+    make -j2 && \
+    make install
+
+RUN cd $BUILD_ROOT/build/cross/mingw-w64-headers || exit && \
+    ../../../src/mingw-w64/mingw-w64-headers/configure --host=x86_64-w64-mingw32 --prefix="$INSTALL_DIR"/x86_64-w64-mingw32 && \
+    make install
+
+RUN cd /opt/mingw-builds/src/gcc || exit && \
+    contrib/download_prerequisites && \
+    cd ../.. && \
+    cd "$BUILD_ROOT"/build/cross/gcc || exit && \
+    ../../../src/gcc/configure --prefix="$INSTALL_DIR" --target=x86_64-w64-mingw32 --disable-multilib --enable-languages=c,c++ && \
+    make -j2 all-gcc && \
+    make install-gcc
+
+RUN cd "$BUILD_ROOT"/build/cross/mingw-w64 || exit && \
+    ../../../src/mingw-w64/configure --host=x86_64-w64-mingw32 --prefix="$INSTALL_DIR"/x86_64-w64-mingw32 && \
+    make && \
+    make install
+
+RUN cd "$BUILD_ROOT"/build/cross/gcc || exit && \
+    make -j2 && \
+    make install
+
+
+ENTRYPOINT ["/bin/bash"]
