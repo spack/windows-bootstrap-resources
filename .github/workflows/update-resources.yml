@@ -1,0 +1,46 @@
+name: "Update resources"
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{github.ref}}-${{ github.run_number }}
+  cancel-in-progress: true
+
+jobs:
+  changed:
+    name: "Build and Upload Resources"
+    runs-on: ubuntu-latest
+    outputs:
+      mingw: ${{ steps.changes.outputs.mingw }}
+      file: ${{ steps.changes.outputs.file }}
+      gpg4win: ${{ steps.changes.outputs.gpg4win }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+              mingw:
+                - 'Dockerfiles/mingw-w64/**'
+              file:
+                - 'Dockerfiles/file/**'
+              gpg4win:
+                - 'Dockerfiles/gpg4win/**'
+  build-upload-mingw:
+    name: "Mingw-w64 build and Upload"
+    if: ${{ needs.changed.outputs.mingw }}
+    needs: [changed]
+    uses: ./.github/worflows/update-mingw.yml
+  build-upload-gpg:
+    name: "Gpg x-build and upload for Windows"
+    if: ${{ !failure() && !cancelled() && needs.changed.outputs.gpg4win }}
+    needs: [build-upload-mingw]
+    uses: ./.github/worflows/update-gpg.yml
+  build-upload-file:
+    name: "File x-build and upload for Windows"
+    if: ${{ !failure() && !cancelled() && needs.changed.outputs.file }}
+    needs: [build-upload-mingw]
+    uses: ./.github/worflows/update-file.yml
