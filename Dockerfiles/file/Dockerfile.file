@@ -1,19 +1,29 @@
-FROM mingw-w64
+ARG MINGW_REPO=ghcr.io/spack/
+ARG MINGW_VERSION=latest
+FROM ${MINGW_REPO}mingw-w64:${MINGW_VERSION}
 
 RUN mkdir -p /opt/file/src /opt/file/bin
 WORKDIR /opt/file/src
 
-RUN curl -o file.tar.gz https://github.com/file/file/archive/refs/tags/FILE5_45.tar.gz &&\
+RUN curl -Lo file.tar.gz https://github.com/file/file/archive/refs/tags/FILE5_45.tar.gz &&\
   tar -oxf file.tar.gz
 
-WORKDIR /opt/file/src/file
+WORKDIR /opt/file/src/file-FILE5_45
 
 # Build file
-RUN $BUILD_ROOT/src/mingw-w64/mingw-w64-headers/configure \\
-      --prefix=/opt/file \\
-      --host=x86_64-w64-mingw32 \\
-      --target=x86_64-w64-mingw32 \\
-      --disable-multilib \\
-      --enable-languages=c,c++ &&\
-    make -j4 &&\
+RUN autoreconf -f -i && \
+    mkdir build && \
+    pushd build && \
+    ../configure \
+      --disable-bzlib \
+      --disable-libseccomp \
+      --disable-xzlib \
+      --disable-zlib && \
+    make && \
+    popd && \
+    ./configure \
+      --prefix=/opt/file \
+      --host=x86_64-w64-mingw32 \
+      --build=$(./config.guess) && \
+    make FILE_COMPILE=$(pwd)/build/src/file -j4 && \
     make install

@@ -1,0 +1,32 @@
+on:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: gpg4win
+  PR_NUMBER: ${{ github.event.number }}
+
+jobs:
+  build-gpg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Docker Tag Metadata
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=pr
+      - name: Docker Build
+        run: docker build -f Dockerfiles/gpg/Dockerfile.gpg --build-arg MINGW_VERSION=pr-${{ env.PR_NUMBER }} -t ${{ steps.meta.outputs.tags }} --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:pr-${{ env.PR_NUMBER }} .
+      - name: Docker Push
+        run: docker push ${{ steps.meta.outputs.tags }}
