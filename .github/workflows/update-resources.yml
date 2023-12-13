@@ -16,7 +16,7 @@ jobs:
     outputs:
       mingw: ${{ steps.changes.outputs.mingw }}
       file: ${{ steps.changes.outputs.file }}
-      gpg4win: ${{ steps.changes.outputs.gpg4win }}
+      gpg: ${{ steps.changes.outputs.gpg }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -27,8 +27,8 @@ jobs:
                 - 'Dockerfiles/mingw-w64/**'
               file:
                 - 'Dockerfiles/file/**'
-              gpg4win:
-                - 'Dockerfiles/gpg4win/**'
+              gpg:
+                - 'Dockerfiles/gpg/**'
   build-upload-mingw:
     name: "Mingw-w64 build and Upload"
     if: ${{ needs.changed.outputs.mingw }}
@@ -36,7 +36,7 @@ jobs:
     uses: ./.github/worflows/update-mingw.yml
   build-upload-gpg:
     name: "Gpg x-build and upload for Windows"
-    if: ${{ !failure() && !cancelled() && needs.changed.outputs.gpg4win }}
+    if: ${{ !failure() && !cancelled() && needs.changed.outputs.gpg }}
     needs: [build-upload-mingw]
     uses: ./.github/worflows/update-gpg.yml
   build-upload-file:

@@ -2,7 +2,7 @@ on: workflow_dispatch
 
 
 jobs:
-  build-gpg4win:
+  build-gpg:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,5 +14,5 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfiles/gpg4win/Dockerfile.gpg4win
+          file: Dockerfiles/gpg/Dockerfile.gpg
           load: true

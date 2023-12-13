@@ -47,9 +47,9 @@ jobs:
           fetch_depth: 0
       - name: Extract file binary tree + archive
         run: |
-          mkdir -p resources/file/file
-          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/windows-resource/${{ env.IMAGE_NAME }}:latest):/opt/file binary/bootstrap/file
-          cd resources/file
+          mkdir -p tmp/resources/file
+          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/windows-resource/${{ env.IMAGE_NAME }}:latest):/opt/file tmp/resources/file/file
+          cd tmp/resources/file
           tar -cz file > file.tar.gz
       - name: Checkout pages
         run: |
@@ -61,6 +61,6 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
-          setup-pages.py
+          rm -rf resources/file/*
+          mv tmp/resources/file/file.tar.gz resources/file/file.tar.gz
           git add resources/file/file.tar.gz && git commit -m"Update file binary" && git push -f
-
