@@ -33,16 +33,16 @@ jobs:
     name: "Mingw-w64 build"
     if: ${{ needs.changed.outputs.mingw }}
     needs: [changed]
-    uses: ./.github/worflows/build-mingw.yml
+    uses: ./.github/workflows/build-mingw.yml
 
   build-gpg:
     name: "Gpg x-build for Windows"
     if: ${{ !failure() && !cancelled() && needs.changed.outputs.gpg }}
     needs: [build-mingw]
-    uses: ./.github/worflows/build-gpg.yml
+    uses: ./.github/workflows/build-gpg.yml
 
   build-file:
     name: "File x-build for Windows"
     if: ${{ !failure() && !cancelled() && needs.changed.outputs.file }}
     needs: [build-mingw]
-    uses: ./.github/worflows/build-file.yml
+    uses: ./.github/workflows/build-file.yml
