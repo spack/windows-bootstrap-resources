@@ -15,10 +15,10 @@ jobs:
         uses: actions/download-artifact@v3
         with:
             name: mingw-w64-image
-            path: /tmp
+            path: tmp
       - name: Load image from artifact
         run: |
-          docker load --input /tmp/mingw-w64-image.tar
+          docker load --input tmp/mingw-w64-image.tar
       - name: Build and export to Docker
         uses: docker/build-push-action@v5
         with:
