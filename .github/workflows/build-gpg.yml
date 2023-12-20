@@ -11,6 +11,14 @@ jobs:
           fetch-depth: 0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Fetch mingw artifact
+        uses: actions/download-artifact@v3
+        with:
+            name: mingw-w64-image
+            path: /tmp
+      - name: Load image from artifact
+        run: |
+          docker load --input /tmp/mingw-w64-image.tar
       - name: Build and export to Docker
         uses: docker/build-push-action@v5
         with:
