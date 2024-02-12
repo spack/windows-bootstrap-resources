@@ -18,7 +18,7 @@ jobs:
             path: /tmp/images
       - name: Load image from artifact
         run: |
-          docker load --input /tmp/images
+          docker load --input /tmp/images/mingw-w64.tar
       - name: Build and export to Docker
         uses: docker/build-push-action@v5
         with:
