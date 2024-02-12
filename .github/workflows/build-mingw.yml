@@ -20,9 +20,9 @@ jobs:
           context: .
           file: Dockerfiles/mingw-w64/Dockerfile.mingw-w64
           tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/windows-resource/${{ env.IMAGE_NAME }}:latest
-          outputs: type=docker,dest=/tmp/images
+          outputs: type=docker,dest=tmp/images
       - name: Upload Docker image to GH artifacts
         uses: actions/upload-artifact@v3
         with:
           name: mingw-w64-image
-          path: tmp
+          path: tmp/images
