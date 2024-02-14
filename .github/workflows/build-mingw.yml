@@ -19,7 +19,7 @@ jobs:
         with:
           context: .
           file: Dockerfiles/mingw-w64/Dockerfile.mingw-w64
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
           outputs: type=docker,dest=/tmp/mingw_w64.tar
       - name: Upload Docker image to GH artifacts
         uses: actions/upload-artifact@v3

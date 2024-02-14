@@ -1,4 +1,4 @@
-FROM ghcr.io/spack/win-boot-mingw-w64:latest
+FROM spack/win-boot-mingw-w64:latest
 
 RUN mkdir -p /opt/file/src /opt/file/bin
 WORKDIR /opt/file/src
