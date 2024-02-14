@@ -1,0 +1,28 @@
+on:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: win-boot-mingw-w64
+
+jobs:
+  build-mingw-w64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfiles/mingw-w64/Dockerfile.mingw-w64
+          tags: ${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          outputs: type=docker,dest=/tmp/mingw_w64.tar
+      - name: Upload Docker image to GH artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mingw-w64-image
+          path: /tmp/mingw_w64.tar
