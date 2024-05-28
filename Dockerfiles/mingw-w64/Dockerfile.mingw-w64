@@ -22,9 +22,9 @@ ENV PATH=/opt/mingw64-w64:/opt/mingw64-w64/bin:$PATH
 RUN mkdir -p /opt/mingw-builds && \
     cd /opt/mingw-builds || exit && \
     # Create source residence directories
-    mkdir -p src/binutils src/mingw-w64 src/gcc && \
+    mkdir -p src/binutils src/mingw-w64 src/gcc src/regex && \
     # Create build directories
-    mkdir -p build/cross/binutils build/cross/gcc build/cross/mingw-w64-headers build/cross/mingw-w64
+    mkdir -p build/cross/binutils build/cross/gcc build/cross/mingw-w64-headers build/cross/mingw-w64 build/cross/regex
 
 # fetch sources
 RUN echo -e """#!/bin/bash\n \
@@ -50,6 +50,8 @@ fetch_extract_sources https://ftp.gnu.org/gnu/binutils/binutils-2.41.tar.xz\n\
 fetch_extract_sources https://ftp.gnu.org/gnu/gcc/gcc-11.4.0/gcc-11.4.0.tar.gz 2\n\
 # acquire mingw-w64\n\
 fetch_extract_sources https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v11.0.1.tar.bz2 3\n\
+# acquire mingw-w64-libgnurx\n\
+fetch_extract_sources http://download.sourceforge.net/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz 2\
 """ > /opt/scripts/acquire-sources.sh && chmod +x /opt/scripts/acquire-sources.sh
 
 RUN /opt/scripts/acquire-sources.sh
@@ -81,6 +83,11 @@ RUN cd "$BUILD_ROOT"/build/cross/mingw-w64 || exit && \
     make install
 
 RUN cd "$BUILD_ROOT"/build/cross/gcc || exit && \
+    make -j2 && \
+    make install
+
+RUN cd "$BUILD_ROOT"/build/cross/regex || exit && \
+    ../../../src/regex/configure --host=x86_64-w64-mingw32 --prefix="$INSTALL_DIR"/x86_64-w64-mingw32 && \
     make -j2 && \
     make install
 

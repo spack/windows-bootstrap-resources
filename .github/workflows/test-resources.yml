@@ -1,0 +1,54 @@
+name: "Test Build Resources"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{github.ref}}-${{github.event.pull_request.number || github.run_number}}
+  cancel-in-progress: true
+
+jobs:
+  changed:
+    name: "Build and Upload Resources"
+    runs-on: ubuntu-latest
+    outputs:
+      mingw: ${{  steps.changes.outputs.mingw }}
+      file: ${{ steps.changes.outputs.file }}
+      gpg: ${{ steps.changes.outputs.gpg }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+              mingw:
+                - 'Dockerfiles/mingw-w64/**'
+              file:
+                - 'Dockerfiles/file/**'
+              gpg:
+                - 'Dockerfiles/gpg/**'
+  build-mingw:
+    name: "Mingw-w64 build"
+    if: ${{ needs.changed.outputs.mingw }}
+    needs: [changed]
+    uses: ./.github/workflows/build-mingw.yml
+
+  build-gpg:
+    name: "Gpg x-build for Windows"
+    if: |
+      always() &&
+      needs.changed.outputs.gpg &&
+      (needs.build-mingw.result == 'success' || needs.build-mingw.result == 'skipped')
+    needs: [build-mingw, changed]
+    uses: ./.github/workflows/build-gpg.yml
+
+  build-file:
+    name: "File x-build for Windows"
+    if: |
+      always() &&
+      needs.changed.outputs.file &&
+      (needs.build-mingw.result == 'success' || needs.build-mingw.result == 'skipped')
+    needs: [build-mingw, changed]
+    uses: ./.github/workflows/build-file.yml

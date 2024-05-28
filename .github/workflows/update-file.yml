@@ -1,0 +1,65 @@
+on:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: file
+
+jobs:
+  build-file:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=refs,event=push
+            type=sha
+          flavor: |
+            latest=true
+      - name: Docker Build
+        run: docker build -f Dockerfiles/file/Dockerfile.file -t ${{ steps.meta.outputs.tags }} --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main .
+      - name: Docker Push
+        run: docker push ${{ steps.meta.outputs.tags }}
+  push-file:
+    runs-on: ubuntu-latest
+    needs: [build-file]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch_depth: 0
+      - name: Extract file binary tree + archive
+        run: |
+          mkdir -p tmp/resources/file
+          export CONTAINER_ID=$(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest)
+          docker cp $CONTAINER_ID:/opt/file tmp/resources/file/file
+          docker cp $CONTAINER_ID:/opt/mingw64-w64/x86_64-w64-mingw32/bin/libgnurx-0.dll tmp/resource/file/file/bin
+          cd tmp/resources/file
+          tar -cz file > file.tar.gz
+      - name: Checkout pages
+        run: |
+          git fetch --all
+          git checkout -f -B pages --track origin/pages
+      - name: Config git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Github Actions from commit ${{ github.sha }}"
+      - name: Upload
+        run: |
+          rm -rf resources/file/*
+          mv tmp/resources/file/file.tar.gz resources/file/file.tar.gz
+          git add resources/file/file.tar.gz && git commit -m"Update file binary" && git push -f

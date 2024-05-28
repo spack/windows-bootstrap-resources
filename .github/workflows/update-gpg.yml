@@ -1,0 +1,63 @@
+on:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: gpg
+
+jobs:
+  build-gpg:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=refs,event=push
+            type=sha
+          flavor: |
+            latest=true
+      - name: Docker Build
+        run: docker build -f Dockerfiles/gpg/Dockerfile.gpg -t ${{ steps.meta.outputs.tags }} --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main .
+      - name: Docker Push
+        run: docker push ${{ steps.meta.outputs.tags }}
+  push-gpg:
+    runs-on: ubuntu-latest
+    needs: [build-gpg]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch_depth: 0
+      - name: Extract gpg binary tree + archive
+        run: |
+          mkdir -p tmp/resources/gpg
+          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest):/opt/gpg tmp/resources/gpg/gpg
+          cd tmp/resources/gpg
+          tar -cz gpg > gpg.tar.gz
+      - name: Checkout pages
+        run: |
+          git fetch --all
+          git checkout -f -B pages --track origin/pages
+      - name: Config git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Github Actions from commit ${{ github.sha }}"
+      - name: Upload
+        run: |
+          rm -rf resources/gpg/*
+          mv tmp/resources/gpg/gpg.tar.gz resources/gpg/gpg.tar.gz
+          git add resources/gpg/gpg.tar.gz && git commit -m"Update gpg binary" && git push -f

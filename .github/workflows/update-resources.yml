@@ -1,0 +1,52 @@
+name: "Update resources"
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{github.ref}}-${{ github.run_number }}
+  cancel-in-progress: true
+
+jobs:
+  changed:
+    name: "Build and Upload Resources"
+    runs-on: ubuntu-latest
+    outputs:
+      mingw: ${{ steps.changes.outputs.mingw }}
+      file: ${{ steps.changes.outputs.file }}
+      gpg: ${{ steps.changes.outputs.gpg }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+              mingw:
+                - 'Dockerfiles/mingw-w64/**'
+              file:
+                - 'Dockerfiles/file/**'
+              gpg:
+                - 'Dockerfiles/gpg/**'
+  build-upload-mingw:
+    name: "Mingw-w64 build and Upload"
+    if: ${{ needs.changed.outputs.mingw }}
+    needs: [changed]
+    uses: ./.github/workflows/update-mingw.yml
+  build-upload-gpg:
+    name: "Gpg x-build and upload for Windows"
+    if: |
+      always() &&
+      needs.changed.outputs.gpg &&
+      (needs.build-upload-mingw.result == 'success' || needs.build-upload-mingw.result == 'skipped')
+    needs: [build-upload-mingw, changed]
+    uses: ./.github/workflows/update-gpg.yml
+  build-upload-file:
+    name: "File x-build and upload for Windows"
+    if: |
+      always() &&
+      needs.changed.outputs.file &&
+      (needs.build-upload-mingw.result == 'success' || needs.build-upload-mingw.result == 'skipped')
+    needs: [build-upload-mingw, changed]
+    uses: ./.github/workflows/update-file.yml

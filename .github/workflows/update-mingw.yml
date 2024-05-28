@@ -1,0 +1,64 @@
+on:
+  workflow_call:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: mingw-w64
+
+jobs:
+  build-mingw-w64:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=refs,event=push
+            type=sha
+          flavor: |
+            latest=true
+      - name: Docker Build
+        run: docker build -f Dockerfiles/mingw-w64/Dockerfile.mingw-w64 -t ${{ steps.meta.outputs.tags }} --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest --cache-from type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main .
+      - name: Docker Push
+        run: docker push ${{ steps.meta.outputs.tags }}
+
+  push-mingw-w64:
+    runs-on: ubuntu-latest
+    needs: [build-mingw-w64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch_depth: 0
+      - name: Extract mingw-w64 binary tree + archive
+        run: |
+          mkdir -p tmp/resources/mingw_w64
+          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest):/opt/mingw64-w64 tmp/resources/mingw_w64/mingw_w64
+          cd tmp/resources/mingw_w64
+          tar -cz mingw_w64 > mingw_w64.tar.gz
+      - name: Checkout pages
+        run: |
+          git fetch --all
+          git checkout -f -B pages --track origin/pages
+      - name: Config git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Github Actions from commit ${{ github.sha }}"
+      - name: Upload
+        run: |
+          rm -rf resources/mingw_w64/*
+          mv tmp/resources/mingw_w64/mingw_w64.tar.gz resources/mingw_w64/mingw_w64.tar.gz
+          git add resources/mingw_w64/mingw_w64.tar.gz && git commit -m"Update mingw_w64 binary" && git push -f
