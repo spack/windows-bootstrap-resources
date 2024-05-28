@@ -68,6 +68,7 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
+          mkdir -p resources/file
           rm -rf resources/file/*
           mv tmp/resources/file/file.tar.gz resources/file/file.tar.gz
           git add resources/file/file.tar.gz && git commit -m"Update file binary" && git push -f

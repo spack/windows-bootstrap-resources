@@ -67,6 +67,7 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
+          mkdir -p resources/mingw_w64
           rm -rf resources/mingw_w64/*
           mv tmp/resources/mingw_w64/mingw_w64.tar.gz resources/mingw_w64/mingw_w64.tar.gz
           git add resources/mingw_w64/mingw_w64.tar.gz && git commit -m"Update mingw_w64 binary" && git push -f

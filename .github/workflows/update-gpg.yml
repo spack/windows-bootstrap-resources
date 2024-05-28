@@ -66,6 +66,7 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
+          mkdir -p resources/gpg
           rm -rf resources/gpg/*
           mv tmp/resources/gpg/gpg.tar.gz resources/gpg/gpg.tar.gz
           git add resources/gpg/gpg.tar.gz && git commit -m"Update gpg binary" && git push -f
