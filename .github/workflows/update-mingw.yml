@@ -27,7 +27,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=refs,event=push
+            type=ref,event=push
             type=sha
           flavor: |
             latest=true
