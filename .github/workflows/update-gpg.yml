@@ -52,10 +52,10 @@ jobs:
           fetch_depth: 0
       - name: Extract gpg binary tree + archive
         run: |
-          mkdir -p tmp/resources/gpg
-          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest):/opt/gpg tmp/resources/gpg/gpg
-          cd tmp/resources/gpg
-          tar -cz gpg > gpg.tar.gz
+          mkdir -p tmp/resources/gpg/2.4.5
+          docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest):/opt/gpg tmp/resources/gpg/2.4.5/gpg
+          cd tmp/resources/gpg/2.4.5
+          tar -cz gpg > gpg_2.4.5.tar.gz
       - name: Checkout pages
         run: |
           git fetch --all
@@ -66,7 +66,7 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
-          mkdir -p resources/gpg
-          rm -rf resources/gpg/*
-          mv tmp/resources/gpg/gpg.tar.gz resources/gpg/gpg.tar.gz
-          git add resources/gpg/gpg.tar.gz && git commit -m"Update gpg binary" && git push -f
+          mkdir -p resources/gpg/2.4.5
+          rm -rf resources/gpg/2.4.5/*
+          mv tmp/resources/gpg/2.4.5/gpg_2.4.5.tar.gz resources/gpg/2.4.5/gpg_2.4.5.tar.gz
+          git add resources/gpg/2.4.5/gpg_2.4.5.tar.gz && git commit -m"Update gpg binary" && git push -f

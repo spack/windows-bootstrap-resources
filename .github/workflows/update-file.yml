@@ -52,12 +52,12 @@ jobs:
           fetch_depth: 0
       - name: Extract file binary tree + archive
         run: |
-          mkdir -p tmp/resources/file
+          mkdir -p tmp/resources/file/5.45
           export CONTAINER_ID=$(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest)
-          docker cp $CONTAINER_ID:/opt/file tmp/resources/file/file
-          docker cp $CONTAINER_ID:/opt/mingw64-w64/x86_64-w64-mingw32/bin/libgnurx-0.dll tmp/resource/file/file/bin
-          cd tmp/resources/file
-          tar -cz file > file.tar.gz
+          docker cp $CONTAINER_ID:/opt/file tmp/resources/file/5.45/file
+          docker cp $CONTAINER_ID:/opt/mingw64-w64/x86_64-w64-mingw32/bin/libgnurx-0.dll tmp/resource/file/5.45/file/bin
+          cd tmp/resources/file/5.45
+          tar -cz file > file_5.45.tar.gz
       - name: Checkout pages
         run: |
           git fetch --all
@@ -68,7 +68,7 @@ jobs:
           git config --local user.name "Github Actions from commit ${{ github.sha }}"
       - name: Upload
         run: |
-          mkdir -p resources/file
-          rm -rf resources/file/*
-          mv tmp/resources/file/file.tar.gz resources/file/file.tar.gz
-          git add resources/file/file.tar.gz && git commit -m"Update file binary" && git push -f
+          mkdir -p resources/file/5.45
+          rm -rf resources/file/5.45/*
+          mv tmp/resources/file/5.45/file_5.45.tar.gz resources/file/5.45/file_5.45.tar.gz
+          git add resources/file/file_5.45.tar.gz && git commit -m"Update file binary" && git push -f
