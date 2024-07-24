@@ -55,7 +55,7 @@ jobs:
           mkdir -p tmp/resources/gpg/2.4.5
           docker cp $(docker create ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest):/opt/gpg tmp/resources/gpg/2.4.5/gpg
           cd tmp/resources/gpg/2.4.5
-          tar -cz gpg > gpg_2.4.5.tar.gz
+          tar -cz gpg > gpg4win_2.4.5.tar.gz
       - name: Checkout pages
         run: |
           git fetch --all
@@ -68,5 +68,5 @@ jobs:
         run: |
           mkdir -p resources/gpg/2.4.5
           rm -rf resources/gpg/2.4.5/*
-          mv tmp/resources/gpg/2.4.5/gpg_2.4.5.tar.gz resources/gpg/2.4.5/gpg_2.4.5.tar.gz
-          git add resources/gpg/2.4.5/gpg_2.4.5.tar.gz && git commit -m"Update gpg binary" && git push -f
+          mv tmp/resources/gpg/2.4.5/gpg4win_2.4.5.tar.gz resources/gpg/2.4.5/gpg4win_2.4.5.tar.gz
+          git add resources/gpg/2.4.5/gpg4win_2.4.5.tar.gz && git commit -m"Update gpg binary" && git push -f
