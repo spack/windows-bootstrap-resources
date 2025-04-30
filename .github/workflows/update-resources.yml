@@ -50,3 +50,7 @@ jobs:
       (needs.build-upload-mingw.result == 'success' || needs.build-upload-mingw.result == 'skipped')
     needs: [build-upload-mingw, changed]
     uses: ./.github/workflows/update-file.yml
+
+  build-upload-msvc-wrapper:
+    name: "Build and upload the msvc compiler wrapper"
+    uses: ./.github/workflows/update-wrapper.yml

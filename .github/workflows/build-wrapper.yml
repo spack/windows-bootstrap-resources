@@ -1,0 +1,21 @@
+on:
+  workflow_call:
+
+jobs:
+  build-file:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout Wrapper Source
+        uses: actions/checkout@v4
+        with:
+          repository: spack/msvc-wrapper
+          ref: v0.1.0
+          fetch-tags: true
+      # build and tests the wrapper
+      - name: Build Wrapper
+        run: |
+          cd msvc-wrapper
+          test\setup_and_drive_test.bat
