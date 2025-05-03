@@ -14,6 +14,7 @@ jobs:
           repository: spack/msvc-wrapper
           ref: v0.1.0
           fetch-tags: true
+          path: msvc-wrapper
       # build and tests the wrapper
       - name: Build Wrapper
         run: |
