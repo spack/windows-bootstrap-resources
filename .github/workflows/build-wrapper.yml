@@ -15,6 +15,10 @@ jobs:
           ref: v0.1.0
           fetch-tags: true
           path: msvc-wrapper
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Remove Git Bash tools
+        run: |
+          rmdir /s /q "C:\Program Files\Git\usr"
       # build and tests the wrapper
       - name: Build Wrapper
         run: |
