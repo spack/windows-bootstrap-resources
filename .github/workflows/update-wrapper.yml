@@ -1,0 +1,47 @@
+on:
+  workflow_call:
+
+jobs:
+  build-file:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout Wrapper Source
+        uses: actions/checkout@v4
+        with:
+          repository: spack/msvc-wrapper
+          ref: v0.1.0
+          fetch-tags: true
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Remove Git Bash tools
+        run: |
+          rmdir /s /q "C:\Program Files\Git\usr"
+      # build and tests the wrapper
+      - name: Build Wrapper
+        run: |
+          cd msvc-wrapper
+          test\setup_and_drive_test.bat
+      - name: Install Wrapper
+        run: |
+          cd msvc-wrapper
+          nmake install PREFIX=wrapper-install
+      - name: Bundle Wrapper
+        run: |
+          cd msvc-wrapper
+          tar -cz wrapper-install > msvc-wrapper-0.1.0.tar.gz
+      - name: Checkout pages
+        run: |
+          git fetch --all
+          git checkout -f -B pages --track origin/pages
+      - name: Config git user
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Github Actions from commit ${{ github.sha }}"
+      - name: Upload
+        run: |
+          mkdir resources/msvc-wrapper/0.1.0
+          del /Q resources/msvc-wrapper/0.1.0/*
+          mv msvc-wrapper/msvc-wrapper-0.1.0.tar.gz resources/msvc-wrapper/0.1.0/msvc-wrapper_0.1.0.tar.gz
+          git add resources/msvc-wrapper/0.1.0/msvc-wrapper_0.1.0.tar.gz && git commit -m"Update msvc-wrapper binary" && git push -f

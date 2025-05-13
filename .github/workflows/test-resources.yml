@@ -52,3 +52,7 @@ jobs:
       (needs.build-mingw.result == 'success' || needs.build-mingw.result == 'skipped')
     needs: [build-mingw, changed]
     uses: ./.github/workflows/build-file.yml
+
+  build-msvc-wrapper:
+    name: "Msvc compiler wrapper build"
+    uses: ./.github/workflows/build-wrapper.yml
