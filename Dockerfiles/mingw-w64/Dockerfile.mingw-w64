@@ -1,11 +1,17 @@
 FROM centos:7
 
 # install requirements for building on Windows
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/CentOS-*.repo
 RUN yum update -y
 RUN yum install -y bison flex texinfo make
 # install modern gcc toolchain
 RUN yum groupinstall "Development Tools" -y
 RUN yum install -y centos-release-scl-rh
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/CentOS-*.repo
 RUN INSTALL_PKGS="devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran devtoolset-7-gdb make" && \
      yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
      rpm -V $INSTALL_PKGS && \
